@@ -19,6 +19,9 @@ import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
 import { UploadButton } from "../uploadthing";
+import { useToast } from "../ui/use-toast";
+import Image from "next/image";
+import { Loader2, XCircle } from "lucide-react";
 
 interface AddHotelFormProps {
   hotel: HotelWithRooms | null;
@@ -62,6 +65,10 @@ const formSchema = z.object({
 
 const AddHotelForm = ({ hotel }: AddHotelFormProps) => {
   const [image, setImage] = useState<string | undefined>(hotel?.image);
+  const [imageIsDeleting, setImageIsDeleting] = useState(false);
+
+  const { toast } = useToast();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -90,6 +97,9 @@ const AddHotelForm = ({ hotel }: AddHotelFormProps) => {
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
   }
+
+  const handleImageDelete = () => {};
+
   return (
     <div>
       <Form {...form}>
@@ -316,20 +326,45 @@ const AddHotelForm = ({ hotel }: AddHotelFormProps) => {
                     </FormDescription>
                     <FormControl>
                       {image ? (
-                        <></>
+                        <>
+                          <div className="relative max-w-[400px] min-w-[200px] max-h-[400px] min-h-[400px] mt-4">
+                            <Image
+                              fill
+                              src={image}
+                              alt="Hotel Image"
+                              className="object-contain"
+                            />
+                            <Button
+                              onClick={() => handleImageDelete(image)}
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="absolute right-[-12px] top-0"
+                            >
+                              {imageIsDeleting ? <Loader2 /> : <XCircle />}
+                            </Button>
+                          </div>
+                        </>
                       ) : (
                         <>
-                          <div className="flex flex-col items-center max-w-[400px]">
+                          <div className="flex flex-col items-center max-w-[400px] p-12 border-2 border-dashed border-primary/50 rounded mt-4">
                             <UploadButton
                               endpoint="imageUploader"
-                              onClientUploadComplete={(res) => {
+                              onClientUploadComplete={(res: any) => {
                                 // Do something with the response
                                 console.log("Files: ", res);
-                                alert("Upload Completed");
+                                setImage(res[0].url);
+                                toast({
+                                  variant: "success",
+                                  description: "Uploaded file successfully",
+                                });
                               }}
                               onUploadError={(error: Error) => {
                                 // Do something with the error.
-                                alert(`ERROR! ${error.message}`);
+                                toast({
+                                  variant: "destructive",
+                                  description: `ERROR! ${error.message}`,
+                                });
                               }}
                             />
                           </div>
